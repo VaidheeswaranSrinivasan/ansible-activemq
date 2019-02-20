@@ -1,0 +1,8 @@
+---
+# vars for activemq
+amq_user: activemq
+amq_group:  activemq
+amq_install_dir: /opt
+amq_env_vars:
+  ACTIVEMQ_USER: "{{ amq_user }}"
+  ACTIVEMQ_BASE: "/opt/{{ amq_user }}"

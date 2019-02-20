@@ -1,0 +1,16 @@
+---
+# handlers for activemq
+- name: "Start activeMQ service"
+  service: 
+    name: activemq
+    state: started
+    
+- name: "Stop activeMQ service"
+  service: 
+    name: activemq
+    state: stopped
+    
+- name: "Restart activeMQ service"
+  service: 
+    name: activemq
+    state: restarted

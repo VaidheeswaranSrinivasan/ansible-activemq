@@ -1,0 +1,69 @@
+---
+- name: "Create group for {{ amq_user }}"
+  group: 
+    name: "{{ amq_group }}"
+    state: present
+    
+- name: "Create {{ amq_user }} as user"
+  user: 
+    name: "{{ amq_user }}"
+    state: present
+    shell: /bin/bash
+    group: "{{ amq_group }}"
+    state: present
+
+- name: Verify activemq availability on the server
+  stat: 
+    path: "{{ amq_install_dir }}/apache-activemq-{{ amq_version }}
+  register: activemq_avail
+    
+- name: "Download activemq"
+  get_url:
+    url: "{{ amq_url }}"
+    dest: "{{ amq_install_dir }}/apache-activemq-{{ amq_version }}-bin.tar.gz"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+  when: not activemq_avail.stat.exists
+    
+- name: "Unarchive activemq tarball"
+  unarchive:
+    src: "{{ amq_install_dir }}/apache-activemq-{{ amq_version }}-bin.tar.gz"
+    dest: "{{ amq_install_dir }}"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+    copy: no
+  when: not activemq_avail.stat.exists
+    
+- name: "Create link"
+  file: 
+    src: "{{ amq_install_dir }}/apache-activemq-{{ amq_version }}"
+    dest: "{{ amq_install_dir }}/activemq"
+    state: link
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+  when: not activemq_avail.stat.exists
+    
+- name: "Copy the activemq.xml config file"
+  template:
+    src: "/templates/activemq.xml.j2"
+    dest: "{{ amq_install_dir }}/activemq/conf/activemq.xml"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+  notify: Restart activeMQ service
+  
+- name: "Copy the service file"
+  file:
+    src: "/files/activemq-service"
+    dest: "{{ amq_install_dir }}/activemq/bin/linux-x86-64/activemq"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+    mode: 0755
+  notify: Restart activeMQ service
+  
+- name: "Create init script link file"
+  file:
+    src: "{{ amq_install_dir }}/activemq/bin/linux-x86-64/activemq"
+    dest: "/etc/init.d/activemq"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+    state: link
