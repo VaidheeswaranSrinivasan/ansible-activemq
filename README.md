@@ -1,1 +1,1 @@
-# ansible-activemq
+# Ansible playbook to install apache-activemq
