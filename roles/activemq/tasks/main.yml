@@ -12,9 +12,9 @@
     group: "{{ amq_group }}"
     state: present
 
-- name: Verify activemq availability on the server
+- name: "Verify activemq availability on the server"
   stat: 
-    path: "{{ amq_install_dir }}/apache-activemq-{{ amq_version }}
+    path: "{{ amq_install_dir }}/apache-activemq-{{ amq_version }}"
   register: activemq_avail
     
 - name: "Download activemq"
