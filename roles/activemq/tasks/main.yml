@@ -51,6 +51,30 @@
     group: "{{ amq_group }}"
   notify: Restart activeMQ service
   
+- name: "Copy the wrapper.conf config file"
+  template:
+    src: "/templates/wrapper.conf.j2"
+    dest: "{{ amq_install_dir }}/activemq/bin/linux-x86-64/activemq"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+  notify: Restart activeMQ service
+  
+- name: "Copy the activemq credentials"
+  copy:
+    src: "/files/credentials.properties"
+    dest: "{{ amq_install_dir }}/activemq/conf/"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+  notify: Restart activeMQ service
+  
+- name: "Copy the jetty realm file"
+  copy:
+    src: "/files/jetty-realm.properties"
+    dest: "{{ amq_install_dir }}/activemq/conf/"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+  notify: Restart activeMQ service
+  
 - name: "Copy the service file"
   file:
     src: "/files/activemq-service"
