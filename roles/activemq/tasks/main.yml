@@ -10,7 +10,8 @@
     state: present
     shell: /bin/bash
     group: "{{ amq_group }}"
-    state: present
+    create_home: "no"
+    append: "no"
 
 - name: "Verify activemq availability on the server"
   stat: 
@@ -20,13 +21,14 @@
 - name: "Download activemq"
   get_url:
     url: "{{ amq_url }}"
-    dest: "{{ amq_install_dir }}/apache-activemq-{{ amq_version }}-bin.tar.gz"
+    dest: "/tmp/apache-activemq-{{ amq_version }}-bin.tar.gz"
     owner: "{{ amq_user }}"
     group: "{{ amq_group }}"
+  when: not activemq_avail.stat.exists
     
 - name: "Unarchive activemq tarball"
   unarchive:
-    src: "{{ amq_install_dir }}/apache-activemq-{{ amq_version }}-bin.tar.gz"
+    src: "/tmp/apache-activemq-{{ amq_version }}-bin.tar.gz"
     dest: "{{ amq_install_dir }}"
     owner: "{{ amq_user }}"
     group: "{{ amq_group }}"
@@ -44,10 +46,11 @@
     
 - name: "Copy the activemq.xml config file"
   template:
-    src: "/templates/activemq.xml.j2"
+    src: "activemq.xml.j2"
     dest: "{{ amq_install_dir }}/activemq/conf/activemq.xml"
     owner: "{{ amq_user }}"
     group: "{{ amq_group }}"
+  become: yes
   
 - name: "Copy the wrapper.conf config file"
   template:
@@ -55,6 +58,7 @@
     dest: "{{ amq_install_dir }}/activemq/bin/linux-x86-64/activemq"
     owner: "{{ amq_user }}"
     group: "{{ amq_group }}"
+  become: yes
   
 - name: "Copy the activemq credentials"
   copy:
@@ -62,6 +66,7 @@
     dest: "{{ amq_install_dir }}/activemq/conf/"
     owner: "{{ amq_user }}"
     group: "{{ amq_group }}"
+  become: yes
   
 - name: "Copy the jetty realm file"
   copy:
@@ -69,6 +74,7 @@
     dest: "{{ amq_install_dir }}/activemq/conf/"
     owner: "{{ amq_user }}"
     group: "{{ amq_group }}"
+  become: yes
   
 - name: "Copy the init script file"
   copy: 
@@ -77,20 +83,56 @@
     owner: root
     group: root
   
-- name: "Create init script link file"
-  file:
+- name: "Copy the activemq startup file"
+  template:
+    src: "activemq.j2"
+    dest: "{{ amq_install_dir }}/activemq/bin/linux-x86-64/activemq"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+  become: "yes"
+
+- name: "Copy init script file into init.d"
+  copy:
     src: "{{ amq_install_dir }}/activemq/bin/linux-x86-64/activemq"
     dest: "/etc/init.d/activemq"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: "Generate /etc/sysconfig/activemq Redhat"
+  template:
+    src: sysconfig_activemq.j2
+    dest: /etc/sysconfig/activemq
     owner: root
     group: root
-    state: link
-  notify: Restart activeMQ service
+    mode: 0755
+    
+- name: "Copy the service file"
+  template:
+    src: "activemq.service.j2"
+    dest: "/etc/systemd/system/activemq.service"
+    owner: "root"
+    group: "root"
+    mode: 0755
+  notify: Restart activeMQ service 
+  become: yes
+  
+- name: "Change ActiveMQ folder permissions"
+  file: 
+    path: "{{ amq_install_dir }}/apache-activemq-{{ amq_version }}{{ item.directory }}"
+    owner: "{{ amq_user }}"
+    group: "{{ amq_group }}"
+    mode: "{{ item.permissions }}"
+    recurse: "yes"
+  with_items:
+    - { directory: "/", permissions: "0755"}
+  notify: Start activeMQ service
   
 - name: "Generate empty log file ..."
   file:
     path: "{{ amq_log_dir }}"
     state: touch
-    mode: 644
+    mode: 0644
     owner: root
     group: root
     
@@ -98,4 +140,4 @@
   service:
     name: activemq
     state: started
-    enabled: yes    
+    enabled: yes 

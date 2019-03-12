@@ -1,3 +1,12 @@
 ---
 # vars for activemq
-
+amq_user: activemq
+amq_group:  activemq
+amq_install_dir: /
+amq_log_dir: /var/log/activemq
+amq_env_vars:
+  ACTIVEMQ_USER: "{{ amq_user }}"
+  ACTIVEMQ_BASE: "/opt/{{ amq_user }}"
+amq_network_mode: "dual"
+network_link_name: linktobroker
+amq_server: localhost

@@ -41,104 +41,131 @@
 
         <!--
             Create these queues on startup so they can be monitored
-        -->
+        --> 
         <destinations>
-             <queue physicalName="DLQ.openapi-collect" />
-             <queue physicalName="DLQ.openapi-redemption-fulfilment" />
-                         <queue physicalName="DLQ.openapi-2fa-events" />
-                         <queue physicalName="DLQ.openapi-collect-err"/>
-             <queue physicalName="openapi-collect" />
-             <queue physicalName="openapi-redemption-fulfilment" />
-                         <queue physicalName="openapi-2fa-events" />
-                         <queue physicalName="openapi-collect-err"/>
+            <queue physicalName="DLQ.openapi-collect" />
+            <queue physicalName="DLQ.openapi-redemption-fulfilment" />
+			<queue physicalName="DLQ.openapi-2fa-events" />
+			<queue physicalName="DLQ.openapi-collect-err"/>
+            <queue physicalName="openapi-collect" />
+            <queue physicalName="openapi-redemption-fulfilment" />
+			<queue physicalName="openapi-2fa-events" />
+			<queue physicalName="openapi-collect-err"/>
         </destinations>
 
         <plugins>
-
-                         <redeliveryPlugin
-                                 fallbackToDeadLetter="true"
-                                 sendToDlqIfMaxRetriesExceeded="true">
-                                 <redeliveryPolicyMap>
-                                         <redeliveryPolicyMap>
-                                                 <redeliveryPolicyEntries>
-                                                         <redeliveryPolicy
-                                                                 queue="openapi-collect"
-                                                                 useExponentialBackOff="true"
-                                                                 backOffMultiplier="5"
-                                                                 maximumRedeliveries="10"
-                                                                 initialRedeliveryDelay="10000"
-                                                                 redeliveryDelay="10000"
-                                                                 maximumRedeliveryDelay="1800000"
-                                                                 />
-                                                         <redeliveryPolicy
-                                                                 queue="openapi-redemption-fulfilment"
-                                                                 useExponentialBackOff="true"
-                                                                 backOffMultiplier="5"
-                                                                 maximumRedeliveries="10"
-                                                                 initialRedeliveryDelay="10000"
-                                                                 redeliveryDelay="10000"
-                                                                 maximumRedeliveryDelay="1800000"
-                                                                 />
-                                                         <redeliveryPolicy
-                                                                 queue="openapi-2fa-events"
-                                                                 useExponentialBackOff="true"
-                                                                 backOffMultiplier="5"
-                                                                 maximumRedeliveries="10"
-                                                                 initialRedeliveryDelay="10000"
-                                                                 redeliveryDelay="10000"
-                                                                 maximumRedeliveryDelay="1800000"
-												 				 />
-                                                 </redeliveryPolicyEntries>
-										 </redeliveryPolicyMap> 
-							     </redeliveryPolicyMap>
-						 </redeliveryPlugin>
-						 
-						 <simpleAuthenticationPlugin>
+		
+			<redeliveryPlugin 
+				fallbackToDeadLetter="true" 
+				sendToDlqIfMaxRetriesExceeded="true">
+				<redeliveryPolicyMap>
+					<redeliveryPolicyMap>
+						<redeliveryPolicyEntries>
+							<redeliveryPolicy 
+								queue="openapi-collect"
+								useExponentialBackOff="true" 
+								backOffMultiplier="5" 
+								maximumRedeliveries="10"
+								initialRedeliveryDelay="10000" 
+								redeliveryDelay="10000" 
+								maximumRedeliveryDelay="1800000" 
+								/>
+							<redeliveryPolicy 
+								queue="openapi-redemption-fulfilment"
+								useExponentialBackOff="true" 
+								backOffMultiplier="5" 
+								maximumRedeliveries="10"
+								initialRedeliveryDelay="10000" 
+								redeliveryDelay="10000" 
+								maximumRedeliveryDelay="1800000" 
+								/>
+							<redeliveryPolicy 
+								queue="openapi-2fa-events"
+								useExponentialBackOff="true" 
+								backOffMultiplier="5" 
+								maximumRedeliveries="10"
+								initialRedeliveryDelay="10000" 
+								redeliveryDelay="10000" 
+								maximumRedeliveryDelay="1800000" 
+								/>
+							<redeliveryPolicy 
+								queue="openapi-collect-err"
+								useExponentialBackOff="true" 
+								backOffMultiplier="5" 
+								maximumRedeliveries="10"
+								initialRedeliveryDelay="10000" 
+								redeliveryDelay="10000" 
+								maximumRedeliveryDelay="1800000" 
+								/>
+						</redeliveryPolicyEntries>
+					</redeliveryPolicyMap>
+				</redeliveryPolicyMap>
+			</redeliveryPlugin>
+	
+			<simpleAuthenticationPlugin>
                 <users>
                     <authenticationUser username="openapi" password="05p33CnR43Pt1" groups="users"/>
                 </users>
             </simpleAuthenticationPlugin>
 
-                </plugins>
+		</plugins>
 
         <destinationPolicy>
             <policyMap>
               <policyEntries>
                 <policyEntry topic=">" >
+                    <!-- The constantPendingMessageLimitStrategy is used to prevent
+                         slow topic consumers to block producers and affect other consumers
+                         by limiting the number of messages that are retained
+                         For more information, see:
+
+                         http://activemq.apache.org/slow-consumer-handling.html
+
+                    -->
                   <pendingMessageLimitStrategy>
-                                        <constantPendingMessageLimitStrategy limit="1000"/>
+                    <constantPendingMessageLimitStrategy limit="1000"/>
                   </pendingMessageLimitStrategy>
                 </policyEntry>
 
-                                <policyEntry queue="openapi-collect" enableAudit="false">
-                                  <deadLetterStrategy>
-                                        <individualDeadLetterStrategy
-                                          queuePrefix="DLQ." useQueueForQueueMessages="true" />
-                                  </deadLetterStrategy>
-                                  <networkBridgeFilterFactory>
-                                        <conditionalNetworkBridgeFilterFactory replayWhenNoConsumers="true"/>
-                                  </networkBridgeFilterFactory>
-                                </policyEntry>
+                <policyEntry queue="openapi-collect" enableAudit="false">
+				  <deadLetterStrategy>
+					<individualDeadLetterStrategy
+					  queuePrefix="DLQ." useQueueForQueueMessages="true" />
+				  </deadLetterStrategy>
+				  <networkBridgeFilterFactory>
+					<conditionalNetworkBridgeFilterFactory replayWhenNoConsumers="true"/>
+				  </networkBridgeFilterFactory>
+				</policyEntry>
 
-                                <policyEntry queue="openapi-redemption-fulfilment" enableAudit="false">
-                                  <deadLetterStrategy>
-                                        <individualDeadLetterStrategy
-                                          queuePrefix="DLQ." useQueueForQueueMessages="true" />
-                                  </deadLetterStrategy>
-                                  <networkBridgeFilterFactory>
-                                        <conditionalNetworkBridgeFilterFactory replayWhenNoConsumers="true"/>
-                                  </networkBridgeFilterFactory>
-                                </policyEntry>
+				<policyEntry queue="openapi-redemption-fulfilment" enableAudit="false">
+				  <deadLetterStrategy>
+					<individualDeadLetterStrategy
+					  queuePrefix="DLQ." useQueueForQueueMessages="true" />
+				  </deadLetterStrategy>
+				  <networkBridgeFilterFactory>
+					<conditionalNetworkBridgeFilterFactory replayWhenNoConsumers="true"/>
+				  </networkBridgeFilterFactory>
+				</policyEntry>
 
-                                <policyEntry queue="openapi-2fa-events" enableAudit="false">
-                                  <deadLetterStrategy>
-                                        <individualDeadLetterStrategy
-                                          queuePrefix="DLQ." useQueueForQueueMessages="true" />
-                                  </deadLetterStrategy>
-								  <networkBridgeFilterFactory>
-                                        <conditionalNetworkBridgeFilterFactory replayWhenNoConsumers="true"/>
-                                  </networkBridgeFilterFactory>
-                                </policyEntry>
+				<policyEntry queue="openapi-2fa-events" enableAudit="false">
+				  <deadLetterStrategy>
+					<individualDeadLetterStrategy
+					  queuePrefix="DLQ." useQueueForQueueMessages="true" />
+				  </deadLetterStrategy>
+				  <networkBridgeFilterFactory>
+					<conditionalNetworkBridgeFilterFactory replayWhenNoConsumers="true"/>
+				  </networkBridgeFilterFactory>
+				</policyEntry>
+				
+				<policyEntry queue="openapi-collect-err" enableAudit="false">
+				  <deadLetterStrategy>
+					<individualDeadLetterStrategy
+					  queuePrefix="DLQ." useQueueForQueueMessages="true" />
+				  </deadLetterStrategy>
+				  <networkBridgeFilterFactory>
+					<conditionalNetworkBridgeFilterFactory replayWhenNoConsumers="true"/>
+				  </networkBridgeFilterFactory>
+				</policyEntry>
 
               </policyEntries>
             </policyMap>
@@ -163,7 +190,7 @@
             http://activemq.apache.org/persistence.html
         -->
         <persistenceAdapter>
-            <kahaDB directory="/data03/activemq/kahadb"/>
+            <kahaDB directory="${activemq.data}/kahadb"/>
         </persistenceAdapter>
 
 
@@ -180,21 +207,21 @@
                 <storeUsage>
                     <storeUsage limit="10 gb"/>
                 </storeUsage>
-				<tempUsage>
+                <tempUsage>
                     <tempUsage limit="2 gb"/>
                 </tempUsage>
             </systemUsage>
         </systemUsage>
 
-                {% if env == 'dual' %}
-                <networkConnectors>
+        {% if amq_network_mode == 'dual' %}
+		<networkConnectors>
             <networkConnector name="{{ network_link_name }}"
                 userName="openapi"
                 password="05p33CnR43Pt1"
                 uri="static:(tcp://{{ amq_server }}:61616)"
-                networkTTL="3" />
+                networkTTL="3" />            
         </networkConnectors>
-                {% endif %}
+		{% endif %}
         <!--
             The transport connectors expose ActiveMQ over a given protocol to
             clients and other brokers. For more information, see:
@@ -202,7 +229,12 @@
             http://activemq.apache.org/configuring-transports.html
         -->
         <transportConnectors>
-            <transportConnector name="openwire" uri="{{ amq_openwire_transport_connector_uri }}"/>
+            <!-- DOS protection, limit concurrent connections to 1000 and frame size to 100MB -->
+            <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="amqp" uri="amqp://0.0.0.0:5672?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="stomp" uri="stomp://0.0.0.0:61613?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="mqtt" uri="mqtt://0.0.0.0:1883?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="ws" uri="ws://0.0.0.0:61614?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
         </transportConnectors>
 
         <!-- destroy the spring context on shutdown to stop jetty -->
